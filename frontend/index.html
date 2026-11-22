@@ -24,22 +24,28 @@
   </header>
 
   <main class="container">
-    <!-- Inicio de sesión -->
+    <!-- Inicio de sesión / Crear cuenta -->
     <section id="loginSection" class="card auth-card">
-      <h2>Inicia sesión para ver tu clóset</h2>
-      <p class="muted">
-        Tu cuenta guarda tus prendas para que no tengas que volver a subir tus fotos cada vez que entres.
+      <div class="tabs" style="margin-bottom:14px;">
+        <button id="modeLoginBtn" class="tab active" type="button">Entrar</button>
+        <button id="modeRegisterBtn" class="tab" type="button">Crear cuenta</button>
+      </div>
+
+      <h2 id="authTitle">Inicia sesión en tu clóset</h2>
+      <p id="authSubtitle" class="muted">
+        Entra con tu usuario para ver las fotos guardadas de tu clóset sin subirlas de nuevo.
       </p>
-      <form id="loginForm" class="stack">
+
+      <form id="loginForm" class="stack" style="margin-top:12px;">
         <label class="field">
-          <span>Usuario, correo o ID</span>
-          <input id="loginId" type="text" placeholder="ej. estefani_m o correo@ejemplo.com" required />
+          <span>Usuario o correo</span>
+          <input id="loginId" type="text" placeholder="ej. usuario@ejemplo.com" required />
         </label>
-        <label class="field">
-          <span>Nombre visible (opcional)</span>
-          <input id="loginNombre" type="text" placeholder="ej. Estefani" />
+        <label id="nombreField" class="field hidden">
+          <span>Tu nombre (opcional)</span>
+          <input id="loginNombre" type="text" placeholder="ej. Usuario" />
         </label>
-        <button class="btn btn-primary" type="submit">Entrar a mi clóset</button>
+        <button id="authSubmitBtn" class="btn btn-primary" type="submit">Entrar a mi clóset</button>
       </form>
       <div id="loginMsg" class="msg hidden"></div>
     </section>
