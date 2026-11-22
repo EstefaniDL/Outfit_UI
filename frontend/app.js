@@ -99,13 +99,46 @@ function renderCloset() {
             <span class="tag">${p.formalidad}</span>
             <span class="tag">Clima: ${(p.clima || []).join(", ")}</span>
           </div>
-          <button class="btn btn-danger" type="button" onclick="borrarPrenda('${p.id}')">Quitar</button>
+          <div class="stack">
+            <select aria-label="Tipo de prenda" id="tipo_${p.id}">
+              ${["superior", "inferior", "calzado", "exterior", "cuerpo_completo", "otro"]
+                .map((opt) => `<option value="${opt}" ${p.tipo_articulo === opt ? "selected" : ""}>${opt}</option>`)
+                .join("")}
+            </select>
+            <input type="text" aria-label="Color principal" id="color_${p.id}" value="${p.color_principal || ""}" placeholder="Color principal" />
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost" style="flex:1;" type="button" onclick="guardarEdicion('${p.id}')">Guardar</button>
+              <button class="btn btn-danger" type="button" onclick="borrarPrenda('${p.id}')">Quitar</button>
+            </div>
+          </div>
         </div>
       </article>
     `
     )
     .join("");
 }
+
+window.guardarEdicion = async function (prendaId) {
+  if (!state.usuario) return;
+  const tipo_articulo = document.getElementById(`tipo_${prendaId}`).value;
+  const color_principal = document.getElementById(`color_${prendaId}`).value.trim() || "sin_definir";
+
+  const res = await fetch(
+    `/api/closet/${encodeURIComponent(state.usuario.user_id)}/prendas/${encodeURIComponent(prendaId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo_articulo,
+        color_principal,
+        etiquetas_confirmadas: true,
+      }),
+    }
+  );
+  if (res.ok) {
+    await cargarCloset();
+  }
+};
 
 window.borrarPrenda = async function (prendaId) {
   if (!state.usuario) return;
@@ -150,66 +183,54 @@ uploadForm.addEventListener("submit", async (e) => {
   }
 });
 
-// Selección curada inicial (se ampliará con el motor completo de 18 reglas en la siguiente fracción)
-generarBtn.addEventListener("click", () => {
+generarBtn.addEventListener("click", async () => {
+  if (!state.usuario) return;
   const ocasion = document.getElementById("filtroOcasion").value;
   const clima = document.getElementById("filtroClima").value;
   const limite = parseInt(document.getElementById("filtroCantidad").value, 10) || 5;
 
-  const superiores = state.prendas.filter((p) => p.tipo_articulo === "superior");
-  const inferiores = state.prendas.filter((p) => p.tipo_articulo === "inferior");
-  const calzados = state.prendas.filter((p) => p.tipo_articulo === "calzado");
+  const res = await fetch(`/api/recomendar/${encodeURIComponent(state.usuario.user_id)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ocasion, clima, limite }),
+  });
+  const data = await res.json();
+  const outfits = data.outfits || [];
 
-  if (!superiores.length || !inferiores.length) {
-    recsContainer.innerHTML = `<div class="card"><p class="muted">Necesitas al menos una prenda superior y una inferior en tu clóset para armar opciones.</p></div>`;
+  if (!outfits.length) {
+    recsContainer.innerHTML = `<div class="card"><p class="muted">Necesitas al menos una prenda superior y una inferior en tu clóset para generar opciones.</p></div>`;
     return;
   }
 
-  const opciones = [];
-  for (const sup of superiores) {
-    for (const inf of inferiores) {
-      const cal = calzados.length ? calzados[opciones.length % calzados.length] : null;
-      const coloresUnicos = new Set([sup.color_principal, inf.color_principal, ...(cal ? [cal.color_principal] : [])]);
-      if (coloresUnicos.size > 4) continue;
-      opciones.push({ sup, inf, cal });
-      if (opciones.length >= limite) break;
-    }
-    if (opciones.length >= limite) break;
-  }
-
-  if (!opciones.length) {
-    recsContainer.innerHTML = `<div class="card"><p class="muted">No se encontraron combinaciones equilibradas para los filtros actuales.</p></div>`;
-    return;
-  }
-
-  recsContainer.innerHTML = opciones
-    .map((op, idx) => {
-      const piezas = [op.sup, op.inf, ...(op.cal ? [op.cal] : [])];
-      return `
-        <article class="outfit-card">
-          <h3>Opción #${idx + 1}</h3>
-          <div class="outfit-desc">
-            <strong>Para qué funciona:</strong> Propuesta pensada para <strong>${ocasion.replace("_", " ")}</strong> en clima <strong>${clima}</strong>, manteniendo variedad en las opciones mostradas y equilibrio visual entre piezas.
-          </div>
-          <div class="outfit-pieces">
-            ${piezas
-              .map(
-                (pz) => `
-              <div class="outfit-piece">
-                <img src="${pz.imagen_url}" alt="${pz.tipo_articulo}" />
-                <div><strong>${pz.tipo_articulo}</strong><br />${pz.color_principal}</div>
-              </div>
-            `
-              )
-              .join("")}
-          </div>
-        </article>
-      `;
-    })
+  recsContainer.innerHTML = outfits
+    .map(
+      (op, idx) => `
+      <article class="outfit-card">
+        <h3>Opción #${idx + 1} · ${op.calificacion} / 10</h3>
+        <div class="outfit-desc">
+          <strong>Para qué funciona:</strong> ${op.descripcion}
+        </div>
+        <div class="outfit-pieces">
+          ${op.piezas
+            .map(
+              (pz) => `
+            <div class="outfit-piece">
+              <img src="${pz.imagen_url}" alt="${pz.tipo_articulo}" />
+              <div><strong>${pz.tipo_articulo}</strong><br />${pz.color_principal}</div>
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+        <ul class="muted" style="margin:0;padding-left:18px;">
+          ${(op.razones || []).map((r) => `<li>${r}</li>`).join("")}
+        </ul>
+      </article>
+    `
+    )
     .join("");
 });
 
-// Auto-sesión si ya había iniciado sesión antes en este navegador
 (async function init() {
   const guardado = localStorage.getItem("outfit_user_id");
   if (guardado) {
