@@ -7,11 +7,6 @@ from typing import Any, Dict, List, Optional
 
 
 class AlmacenamientoDemo:
-    """
-    Almacenamiento local estructurado por user_id para la demo.
-    En la nube se reemplaza/extiende hacia Cloud Storage (por user_id) y tabla de usuarios.
-    """
-
     def __init__(self, base_dir: Path) -> None:
         self.base_dir = Path(base_dir).resolve()
         self.usuarios_file = self.base_dir / "usuarios.json"
@@ -59,11 +54,15 @@ class AlmacenamientoDemo:
         usuarios = data.setdefault("usuarios", {})
 
         if user_id in usuarios:
-            return {"ok": False, "error": "Ese usuario ya existe. Usa la pestaña 'Entrar'."}
+            return {"ok": False, "error": "Ese usuario o correo ya existe. Usa 'Entrar'."}
+
+        nombre_limpio = (nombre or "").strip()
+        if not nombre_limpio:
+            return {"ok": False, "error": "Escribe tu nombre para crear la cuenta."}
 
         usuarios[user_id] = {
             "user_id": user_id,
-            "nombre": (nombre or identificador).strip() or user_id,
+            "nombre": nombre_limpio,
         }
         self._escribir_json(self.usuarios_file, data)
         self._preparar_espacio_usuario(user_id)
@@ -75,10 +74,7 @@ class AlmacenamientoDemo:
         usuarios = data.setdefault("usuarios", {})
 
         if user_id not in usuarios:
-            return {
-                "ok": False,
-                "error": "No encontramos esa cuenta. Ve a 'Crear cuenta' para registrarte.",
-            }
+            return {"ok": False, "error": "No encontramos esa cuenta. Ve a 'Crear cuenta' primero."}
 
         if nombre and nombre.strip():
             usuarios[user_id]["nombre"] = nombre.strip()
@@ -111,19 +107,6 @@ class AlmacenamientoDemo:
         prendas.append(prenda_dict)
         self._escribir_json(ruta, actual)
         return prenda_dict
-
-    def actualizar_prenda(self, user_id: str, prenda_id: str, cambios: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        uid = self.normalizar_user_id(user_id)
-        ruta = self._closet_file(uid)
-        if not ruta.exists():
-            return None
-        actual = self._leer_json(ruta)
-        for prenda in actual.get("prendas", []):
-            if prenda.get("id") == prenda_id:
-                prenda.update(cambios)
-                self._escribir_json(ruta, actual)
-                return prenda
-        return None
 
     def eliminar_prenda(self, user_id: str, prenda_id: str) -> bool:
         uid = self.normalizar_user_id(user_id)
