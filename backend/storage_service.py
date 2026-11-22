@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import uuid
 from pathlib import Path
@@ -32,8 +33,12 @@ class AlmacenamientoDemo:
 
     def _escribir_json(self, ruta: Path, datos: Dict[str, Any]) -> None:
         ruta.parent.mkdir(parents=True, exist_ok=True)
-        with open(ruta, "w", encoding="utf-8") as f:
+        temp_ruta = ruta.with_suffix(ruta.suffix + ".tmp")
+        with open(temp_ruta, "w", encoding="utf-8") as f:
             json.dump(datos, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_ruta, ruta)
 
     @staticmethod
     def normalizar_user_id(identificador: str) -> str:
