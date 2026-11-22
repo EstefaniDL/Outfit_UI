@@ -28,7 +28,7 @@
     <section id="loginSection" class="card auth-card">
       <h2>Inicia sesión para ver tu clóset</h2>
       <p class="muted">
-        Tu cuenta guarda tus prendas para que no tengas que volver a subir tus fotos en cada visita.
+        Tu cuenta guarda tus prendas para que no tengas que volver a subir tus fotos cada vez que entres.
       </p>
       <form id="loginForm" class="stack">
         <label class="field">
@@ -48,7 +48,7 @@
     <section id="appSection" class="hidden stack-lg">
       <nav class="tabs" aria-label="Secciones de la aplicación">
         <button class="tab active" data-tab="closetTab" type="button">Mi Clóset</button>
-        <button class="tab" data-tab="uploadTab" type="button">Subir prenda</button>
+        <button class="tab" data-tab="uploadTab" type="button">Subir foto</button>
         <button class="tab" data-tab="recTab" type="button">Recomendar outfits</button>
       </nav>
 
@@ -57,106 +57,36 @@
         <div class="panel-header">
           <div>
             <h2>Prendas guardadas</h2>
-            <p class="muted">Revisa o ajusta las etiquetas de cada prenda antes de pedir recomendaciones.</p>
+            <p class="muted">Tus fotos se mantienen guardadas para tu usuario.</p>
           </div>
           <span id="closetCount" class="count-pill">0 prendas</span>
+        </div>
+        <div class="notice-box" style="margin-bottom:14px;">
+          Etiquetado automático en espera: cuando se integre el módulo/modelo de datos, el tipo, color y demás atributos se llenarán desde ahí.
         </div>
         <div id="closetGrid" class="grid"></div>
       </div>
 
-      <!-- Pestaña 2: Subir prenda -->
+      <!-- Pestaña 2: Subir foto -->
       <div id="uploadTab" class="tab-panel">
         <div class="card">
-          <h2>Agregar prenda a tu clóset</h2>
+          <h2>Subir foto a tu clóset</h2>
           <p class="muted">
-            Sube una foto y asigna sus atributos actuales (podrás editarlos después o enlazar el módulo de etiquetado cuando esté listo).
+            Sube la foto de tu prenda. El etiquetado automático de tipo, color y atributos quedará conectado cuando esté listo el módulo de datos.
           </p>
-          <form id="uploadForm" class="form-grid">
-            <label class="field full">
+          <form id="uploadForm" class="stack" style="margin-top:14px;">
+            <label class="field">
               <span>Foto de la prenda</span>
               <input id="prendaImagen" type="file" accept="image/jpeg,image/png,image/webp" required />
             </label>
 
-            <div id="previewBox" class="preview-box full hidden">
+            <div id="previewBox" class="preview-box hidden">
               <img id="previewImg" alt="Vista previa de la prenda" />
-              <span class="muted">Vista previa antes de guardar</span>
+              <span class="muted">Vista previa de la foto</span>
             </div>
 
-            <label class="field">
-              <span>Tipo de artículo</span>
-              <select id="prendaTipo">
-                <option value="superior">Prenda superior</option>
-                <option value="inferior">Prenda inferior</option>
-                <option value="calzado">Calzado</option>
-                <option value="exterior">Exterior / abrigo</option>
-                <option value="cuerpo_completo">Cuerpo completo</option>
-                <option value="otro">Otro / complemento</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Color principal</span>
-              <input id="prendaColor" type="text" placeholder="ej. azul_marino, negro, blanco, beige" required />
-            </label>
-
-            <label class="field">
-              <span>Tono / valor</span>
-              <select id="prendaTono">
-                <option value="claro">Claro</option>
-                <option value="medio" selected>Medio</option>
-                <option value="oscuro">Oscuro</option>
-                <option value="suave">Suave / apagado</option>
-                <option value="saturado">Saturado / intenso</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Estampado</span>
-              <select id="prendaEstampado">
-                <option value="liso" selected>Liso</option>
-                <option value="rayas">Rayas</option>
-                <option value="cuadros">Cuadros</option>
-                <option value="flores">Flores</option>
-                <option value="grafico">Gráfico / logo</option>
-                <option value="otro">Otro</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Formalidad</span>
-              <select id="prendaFormalidad">
-                <option value="casual" selected>Casual</option>
-                <option value="semiformal">Semiformal</option>
-                <option value="formal">Formal</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Clima principal</span>
-              <select id="prendaClima">
-                <option value="templado" selected>Templado</option>
-                <option value="frio">Frío</option>
-                <option value="calido">Cálido</option>
-                <option value="lluvioso">Lluvioso</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Corte</span>
-              <select id="prendaCorte">
-                <option value="regular" selected>Regular</option>
-                <option value="ajustado">Ajustado</option>
-                <option value="holgado">Holgado</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Ocasiones (separadas por |)</span>
-              <input id="prendaOcasiones" type="text" value="diario" placeholder="ej. trabajo|evento_formal" />
-            </label>
-
-            <div class="full">
-              <button class="btn btn-primary" type="submit">Guardar prenda en mi clóset</button>
+            <div>
+              <button class="btn btn-primary" type="submit">Guardar foto en mi clóset</button>
             </div>
           </form>
           <div id="uploadMsg" class="msg hidden"></div>
@@ -166,9 +96,9 @@
       <!-- Pestaña 3: Recomendar outfits -->
       <div id="recTab" class="tab-panel">
         <div class="card">
-          <h2>Recomendaciones curadas por ocasión y clima</h2>
+          <h2>Recomendar outfits</h2>
           <p class="muted">
-            Entrega opciones variadas filtradas y puntuadas bajo reglas de colorimetría, formalidad, clima, capas y proporciones (sin mostrar todas las combinaciones posibles).
+            Elige la ocasión y el clima para recibir opciones curadas y variadas (no todas las combinaciones posibles), con descripción de para qué funciona cada outfit.
           </p>
           <div class="form-grid">
             <label class="field">
