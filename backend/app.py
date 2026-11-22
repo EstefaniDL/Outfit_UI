@@ -110,7 +110,7 @@ def register(payload: LoginRequest) -> Dict[str, Any]:
 def obtener_closet(user_id: str) -> Dict[str, Any]:
     usuario = storage.obtener_usuario(user_id)
     if not usuario:
-        usuario = storage.iniciar_o_registrar_usuario(user_id)
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
     prendas = storage.listar_prendas(usuario["user_id"])
     return {"usuario": usuario, "prendas": prendas}
 
