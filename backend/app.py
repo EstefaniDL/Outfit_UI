@@ -10,13 +10,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend.adapter_modelo import adaptar_prediccion_externa
+from backend.rules_engine import recomendar_outfits
 from backend.storage_service import AlmacenamientoDemo
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
 DATA_DIR = BASE_DIR / "data"
 
-app = FastAPI(title="Recomendador de Outfits — Base UI", version="0.1.0")
+app = FastAPI(title="Recomendador de Outfits — Base UI", version="0.2.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -49,6 +50,12 @@ class ActualizarPrendaRequest(BaseModel):
     clima: Optional[List[str]] = None
     ocasiones: Optional[List[str]] = None
     etiquetas_confirmadas: Optional[bool] = None
+
+
+class RecomendacionRequest(BaseModel):
+    ocasion: str = "diario"
+    clima: str = "templado"
+    limite: int = 5
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -137,7 +144,6 @@ async def subir_prenda(
         "origen_etiqueta": "usuario_o_pendiente",
     }
 
-    # Si en el futuro Mich o el pipeline envían JSON con predicciones/etiquetas, se integra aquí
     if metadatos_externos:
         try:
             externo = json.loads(metadatos_externos)
@@ -175,3 +181,17 @@ def borrar_prenda(user_id: str, prenda_id: str) -> Dict[str, Any]:
     if not eliminada:
         raise HTTPException(status_code=404, detail="Prenda no encontrada.")
     return {"eliminada": True, "prenda_id": prenda_id}
+
+
+@app.post("/api/recomendar/{user_id}")
+def recomendar(user_id: str, req: RecomendacionRequest) -> Dict[str, Any]:
+    prendas = storage.listar_prendas(user_id)
+    limite = max(1, min(15, int(req.limite)))
+    outfits = recomendar_outfits(prendas=prendas, ocasion=req.ocasion, clima=req.clima, limite=limite)
+    return {
+        "user_id": user_id,
+        "ocasion": req.ocasion,
+        "clima": req.clima,
+        "total_recomendaciones": len(outfits),
+        "outfits": outfits,
+    }
