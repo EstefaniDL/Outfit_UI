@@ -34,27 +34,42 @@ class AlmacenamientoDemo:
         limpio = re.sub(r"[^a-zA-Z0-9_-]+", "_", identificador.strip().lower()).strip("_")
         return limpio or "usuario_demo"
 
-    def iniciar_o_registrar_usuario(self, identificador: str, nombre: Optional[str] = None) -> Dict[str, Any]:
-        user_id = self.normalizar_user_id(identificador)
-        data = self._leer_json(self.usuarios_file)
-        usuarios = data.setdefault("usuarios", {})
-
-        if user_id not in usuarios:
-            usuarios[user_id] = {
-                "user_id": user_id,
-                "nombre": (nombre or identificador).strip() or user_id,
-            }
-            self._escribir_json(self.usuarios_file, data)
-        elif nombre and nombre.strip():
-            usuarios[user_id]["nombre"] = nombre.strip()
-            self._escribir_json(self.usuarios_file, data)
-
+    def _preparar_espacio_usuario(self, user_id: str) -> None:
         (self.uploads_dir / user_id).mkdir(parents=True, exist_ok=True)
         closet_path = self._closet_file(user_id)
         if not closet_path.exists():
             self._escribir_json(closet_path, {"user_id": user_id, "prendas": []})
 
-        return usuarios[user_id]
+    def crear_cuenta(self, identificador: str, nombre: Optional[str] = None) -> Dict[str, Any]:
+        user_id = self.normalizar_user_id(identificador)
+        data = self._leer_json(self.usuarios_file)
+        usuarios = data.setdefault("usuarios", {})
+
+        if user_id in usuarios:
+            return {"ok": False, "error": "Ese usuario ya existe. Usa 'Entrar' para acceder."}
+
+        usuarios[user_id] = {
+            "user_id": user_id,
+            "nombre": (nombre or identificador).strip() or user_id,
+        }
+        self._escribir_json(self.usuarios_file, data)
+        self._preparar_espacio_usuario(user_id)
+        return {"ok": True, "usuario": usuarios[user_id]}
+
+    def iniciar_sesion(self, identificador: str, nombre: Optional[str] = None) -> Dict[str, Any]:
+        user_id = self.normalizar_user_id(identificador)
+        data = self._leer_json(self.usuarios_file)
+        usuarios = data.setdefault("usuarios", {})
+
+        if user_id not in usuarios:
+            return {"ok": False, "error": "No encontramos una cuenta con ese usuario. Ve a 'Crear cuenta' para registrarte."}
+
+        if nombre and nombre.strip():
+            usuarios[user_id]["nombre"] = nombre.strip()
+            self._escribir_json(self.usuarios_file, data)
+
+        self._preparar_espacio_usuario(user_id)
+        return {"ok": True, "usuario": usuarios[user_id]}
 
     def obtener_usuario(self, user_id: str) -> Optional[Dict[str, Any]]:
         uid = self.normalizar_user_id(user_id)
