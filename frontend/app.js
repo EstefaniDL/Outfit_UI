@@ -110,7 +110,7 @@ loginForm.addEventListener("submit", async (e) => {
   loginSection.classList.add("hidden");
   appSection.classList.remove("hidden");
   userBar.classList.remove("hidden");
-  userBadge.textContent = `${state.usuario.nombre} (@${state.usuario.user_id})`;
+  userBadge.textContent = state.usuario.nombre;
   await cargarCloset();
 });
   
