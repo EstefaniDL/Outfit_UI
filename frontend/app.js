@@ -59,11 +59,59 @@ loginForm.addEventListener("submit", async (e) => {
   const nombre = document.getElementById("loginNombre").value.trim();
   if (!identificador) return;
 
-  const res = await fetch("/api/auth/login", {
+  let authModo = "login"; // "login" | "register"
+
+const modeLoginBtn = document.getElementById("modeLoginBtn");
+const modeRegisterBtn = document.getElementById("modeRegisterBtn");
+const authTitle = document.getElementById("authTitle");
+const authSubtitle = document.getElementById("authSubtitle");
+const nombreField = document.getElementById("nombreField");
+const authSubmitBtn = document.getElementById("authSubmitBtn");
+
+function cambiarModoAuth(nuevoModo) {
+  authModo = nuevoModo;
+  loginMsg.classList.add("hidden");
+  const esRegistro = authModo === "register";
+  modeLoginBtn.classList.toggle("active", !esRegistro);
+  modeRegisterBtn.classList.toggle("active", esRegistro);
+  nombreField.classList.toggle("hidden", !esRegistro);
+  authTitle.textContent = esRegistro ? "Crea tu cuenta" : "Inicia sesión en tu clóset";
+  authSubtitle.textContent = esRegistro
+    ? "Registra un usuario para guardar tu clóset personal en tus próximas visitas."
+    : "Entra con tu usuario para ver las fotos guardadas de tu clóset sin subirlas de nuevo.";
+  authSubmitBtn.textContent = esRegistro ? "Crear cuenta" : "Entrar a mi clóset";
+}
+
+modeLoginBtn.addEventListener("click", () => cambiarModoAuth("login"));
+modeRegisterBtn.addEventListener("click", () => cambiarModoAuth("register"));
+
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const identificador = document.getElementById("loginId").value.trim();
+  const nombre = document.getElementById("loginNombre").value.trim();
+  if (!identificador) return;
+
+  const endpoint = authModo === "register" ? "/api/auth/register" : "/api/auth/login";
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ identificador, nombre: nombre || null }),
   });
+  const data = await res.json();
+  if (!res.ok) {
+    mostrarMensaje(loginMsg, data.detail || "No se pudo completar la acción.");
+    return;
+  }
+
+  state.usuario = data.usuario;
+  localStorage.setItem("outfit_user_id", state.usuario.user_id);
+  loginSection.classList.add("hidden");
+  appSection.classList.remove("hidden");
+  userBar.classList.remove("hidden");
+  userBadge.textContent = `${state.usuario.nombre} (@${state.usuario.user_id})`;
+  await cargarCloset();
+});
+  
   const data = await res.json();
   if (!res.ok) {
     mostrarMensaje(loginMsg, data.detail || "No se pudo iniciar sesión.");
