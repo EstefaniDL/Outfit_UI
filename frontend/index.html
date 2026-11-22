@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estudio de Outfits — Mi Clóset</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-badge">✦</span>
+        <div>
+          <h1>Estudio de Outfits</h1>
+          <p class="subtitle">Clóset persistente y asesoría de imagen</p>
+        </div>
+      </div>
+      <div id="userBar" class="user-bar hidden">
+        <span id="userBadge" class="user-pill"></span>
+        <button id="logoutBtn" class="btn btn-ghost" type="button">Cambiar usuario</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Sección 1: Inicio de sesión -->
+    <section id="loginSection" class="card auth-card">
+      <h2>Inicia sesión para ver tu clóset</h2>
+      <p class="muted">
+        Tus prendas quedan guardadas por usuario para que no tengas que subir tus fotos cada vez que entres.
+      </p>
+      <form id="loginForm" class="stack">
+        <label class="field">
+          <span>Usuario, correo o ID</span>
+          <input id="loginId" type="text" placeholder="ej. estefani_m o correo@ejemplo.com" required />
+        </label>
+        <label class="field">
+          <span>Nombre visible (opcional)</span>
+          <input id="loginNombre" type="text" placeholder="ej. Estefani" />
+        </label>
+        <button class="btn btn-primary" type="submit">Entrar a mi clóset</button>
+      </form>
+      <div id="loginMsg" class="msg hidden"></div>
+    </section>
+
+    <!-- Sección 2: App principal (Clóset + Subida + Vista de recomendación) -->
+    <section id="appSection" class="hidden stack-lg">
+      <nav class="tabs" aria-label="Secciones de la aplicación">
+        <button class="tab active" data-tab="closetTab" type="button">Mi Clóset</button>
+        <button class="tab" data-tab="uploadTab" type="button">Subir prenda</button>
+        <button class="tab" data-tab="recTab" type="button">Recomendar outfits</button>
+      </nav>
+
+      <!-- Pestaña: Mi Clóset -->
+      <div id="closetTab" class="tab-panel active">
+        <div class="panel-header">
+          <div>
+            <h2>Prendas guardadas</h2>
+            <p class="muted">Revisa o corrige las etiquetas de cada prenda antes de armar combinaciones.</p>
+          </div>
+          <span id="closetCount" class="count-pill">0 prendas</span>
+        </div>
+        <div id="closetGrid" class="grid"></div>
+      </div>
+
+      <!-- Pestaña: Subir prenda -->
+      <div id="uploadTab" class="tab-panel">
+        <div class="card">
+          <h2>Agregar prenda a tu clóset</h2>
+          <p class="muted">
+            Sube una foto y asigna o ajusta sus atributos (mientras se conecta el módulo de etiquetado/modelo).
+          </p>
+          <form id="uploadForm" class="form-grid">
+            <label class="field full">
+              <span>Foto de la prenda</span>
+              <input id="prendaImagen" type="file" accept="image/jpeg,image/png,image/webp" required />
+            </label>
+
+            <label class="field">
+              <span>Tipo de artículo</span>
+              <select id="prendaTipo">
+                <option value="superior">Prenda superior</option>
+                <option value="inferior">Prenda inferior</option>
+                <option value="calzado">Calzado</option>
+                <option value="exterior">Exterior / abrigo</option>
+                <option value="cuerpo_completo">Cuerpo completo</option>
+                <option value="otro">Otro / complemento</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Color principal</span>
+              <input id="prendaColor" type="text" placeholder="ej. azul_marino, negro, blanco, beige" required />
+            </label>
+
+            <label class="field">
+              <span>Tono / valor</span>
+              <select id="prendaTono">
+                <option value="claro">Claro</option>
+                <option value="medio" selected>Medio</option>
+                <option value="oscuro">Oscuro</option>
+                <option value="suave">Suave / apagado</option>
+                <option value="saturado">Saturado / intenso</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Estampado</span>
+              <select id="prendaEstampado">
+                <option value="liso" selected>Liso</option>
+                <option value="rayas">Rayas</option>
+                <option value="cuadros">Cuadros</option>
+                <option value="flores">Flores</option>
+                <option value="grafico">Gráfico / logo</option>
+                <option value="otro">Otro</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Formalidad</span>
+              <select id="prendaFormalidad">
+                <option value="casual" selected>Casual</option>
+                <option value="semiformal">Semiformal</option>
+                <option value="formal">Formal</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Clima principal</span>
+              <select id="prendaClima">
+                <option value="templado" selected>Templado</option>
+                <option value="frio">Frío</option>
+                <option value="calido">Cálido</option>
+                <option value="lluvioso">Lluvioso</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Corte</span>
+              <select id="prendaCorte">
+                <option value="regular" selected>Regular</option>
+                <option value="ajustado">Ajustado</option>
+                <option value="holgado">Holgado</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Ocasiones (separadas por |)</span>
+              <input id="prendaOcasiones" type="text" value="diario" placeholder="ej. trabajo|evento_formal" />
+            </label>
+
+            <div class="full">
+              <button class="btn btn-primary" type="submit">Guardar prenda en mi clóset</button>
+            </div>
+          </form>
+          <div id="uploadMsg" class="msg hidden"></div>
+        </div>
+      </div>
+
+      <!-- Pestaña: Recomendar outfits -->
+      <div id="recTab" class="tab-panel">
+        <div class="card">
+          <h2>Opciones recomendadas según ocasión y clima</h2>
+          <p class="muted">
+            Se seleccionan opciones curadas y variadas bajo reglas de colorimetría, formalidad, clima, capas y proporciones (no todas las combinaciones posibles).
+          </p>
+          <div class="form-grid">
+            <label class="field">
+              <span>Ocasión</span>
+              <select id="filtroOcasion">
+                <option value="diario">Diario</option>
+                <option value="trabajo">Trabajo / oficina</option>
+                <option value="evento_formal">Evento formal</option>
+                <option value="fiesta_noche">Fiesta / noche</option>
+                <option value="deporte">Deporte</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Clima / temporada</span>
+              <select id="filtroClima">
+                <option value="templado">Templado</option>
+                <option value="frio">Frío / invierno</option>
+                <option value="calido">Cálido / verano</option>
+                <option value="lluvioso">Lluvioso</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Cantidad de opciones a mostrar</span>
+              <select id="filtroCantidad">
+                <option value="3">3 opciones</option>
+                <option value="5" selected>5 opciones</option>
+                <option value="8">8 opciones</option>
+              </select>
+            </label>
+
+            <div class="field align-end">
+              <button id="generarBtn" class="btn btn-primary" type="button">Generar recomendaciones</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="recsContainer" class="stack-lg"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
