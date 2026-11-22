@@ -21,8 +21,14 @@ class AlmacenamientoDemo:
             self._escribir_json(self.usuarios_file, {"usuarios": {}})
 
     def _leer_json(self, ruta: Path) -> Dict[str, Any]:
-        with open(ruta, "r", encoding="utf-8") as f:
-            return json.load(f)
+        if not ruta.exists():
+            return {"usuarios": {}}
+        try:
+            with open(ruta, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {"usuarios": {}}
+        except Exception:
+            return {"usuarios": {}}
 
     def _escribir_json(self, ruta: Path, datos: Dict[str, Any]) -> None:
         ruta.parent.mkdir(parents=True, exist_ok=True)
@@ -62,7 +68,10 @@ class AlmacenamientoDemo:
         usuarios = data.setdefault("usuarios", {})
 
         if user_id not in usuarios:
-            return {"ok": False, "error": "No encontramos una cuenta con ese usuario. Ve a 'Crear cuenta' para registrarte."}
+            return {
+                "ok": False,
+                "error": "No encontramos una cuenta con ese usuario. Ve a 'Crear cuenta' para registrarte.",
+            }
 
         if nombre and nombre.strip():
             usuarios[user_id]["nombre"] = nombre.strip()
