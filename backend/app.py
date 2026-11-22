@@ -82,16 +82,17 @@ def servir_js() -> FileResponse:
     return FileResponse(js_file, media_type="application/javascript")
 
 
-@app.post("/api/auth/login")
-def login(payload: LoginRequest) -> Dict[str, Any]:
+@app.post("/api/auth/register")
+def register(payload: LoginRequest) -> Dict[str, Any]:
     if not payload.identificador.strip():
-        raise HTTPException(status_code=400, detail="Ingresa un usuario o correo.")
-    resultado = storage.iniciar_sesion(payload.identificador, payload.nombre)
+        raise HTTPException(status_code=400, detail="Elige un usuario o correo para crear tu cuenta.")
+    if not (payload.nombre and payload.nombre.strip()):
+        raise HTTPException(status_code=400, detail="Ingresa tu nombre.")
+    resultado = storage.crear_cuenta(payload.identificador, payload.nombre)
     if not resultado.get("ok"):
-        raise HTTPException(status_code=404, detail=resultado.get("error", "No se pudo iniciar sesión."))
+        raise HTTPException(status_code=409, detail=resultado.get("error", "No se pudo crear la cuenta."))
     usuario = resultado["usuario"]
-    prendas = storage.listar_prendas(usuario["user_id"])
-    return {"usuario": usuario, "total_prendas": len(prendas)}
+    return {"usuario": usuario, "total_prendas": 0}
 
 
 @app.post("/api/auth/register")
