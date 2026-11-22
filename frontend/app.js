@@ -99,7 +99,7 @@ async function cargarCloset() {
 function renderCloset() {
   closetCount.textContent = `${state.prendas.length} ${state.prendas.length === 1 ? "prenda" : "prendas"}`;
   if (!state.prendas.length) {
-    closetGrid.innerHTML = `<div class="card"><p class="muted">Aún no tienes prendas guardadas. Ve a <strong>Subir prenda</strong> para agregar las primeras.</p></div>`;
+    closetGrid.innerHTML = `<div class="card"><p class="muted">Aún no tienes fotos guardadas. Ve a <strong>Subir foto</strong> para agregar las primeras.</p></div>`;
     return;
   }
 
@@ -107,81 +107,20 @@ function renderCloset() {
     .map(
       (p) => `
       <article class="prenda-card">
-        <img src="${p.imagen_url}" alt="${p.tipo_articulo}" loading="lazy" />
+        <img src="${p.imagen_url}" alt="Prenda guardada" loading="lazy" />
         <div class="prenda-body">
-          <strong>${p.tipo_articulo} · ${p.color_principal}</strong>
+          <strong>Prenda guardada</strong>
           <div class="tags">
-            <span class="tag">Tono: ${p.tono}</span>
-            <span class="tag">${p.estampado}</span>
-            <span class="tag">${p.formalidad}</span>
-            <span class="tag">Clima: ${(p.clima || []).join(", ")}</span>
+            <span class="tag">Tipo: ${p.etiquetas_confirmadas ? p.tipo_articulo : "pendiente de modelo"}</span>
+            <span class="tag">Color: ${p.etiquetas_confirmadas ? p.color_principal : "pendiente de modelo"}</span>
           </div>
-          <div class="edit-grid">
-            <select aria-label="Tipo de prenda" id="tipo_${p.id}">
-              ${["superior", "inferior", "calzado", "exterior", "cuerpo_completo", "otro"]
-                .map((opt) => `<option value="${opt}" ${p.tipo_articulo === opt ? "selected" : ""}>${opt}</option>`)
-                .join("")}
-            </select>
-            <input type="text" aria-label="Color principal" id="color_${p.id}" value="${p.color_principal || ""}" placeholder="Color principal" />
-            <select aria-label="Tono" id="tono_${p.id}">
-              ${["claro", "medio", "oscuro", "suave", "saturado"]
-                .map((opt) => `<option value="${opt}" ${p.tono === opt ? "selected" : ""}>${opt}</option>`)
-                .join("")}
-            </select>
-            <select aria-label="Estampado" id="est_${p.id}">
-              ${["liso", "rayas", "cuadros", "flores", "grafico", "otro"]
-                .map((opt) => `<option value="${opt}" ${p.estampado === opt ? "selected" : ""}>${opt}</option>`)
-                .join("")}
-            </select>
-            <select aria-label="Formalidad" id="form_${p.id}">
-              ${["casual", "semiformal", "formal"]
-                .map((opt) => `<option value="${opt}" ${p.formalidad === opt ? "selected" : ""}>${opt}</option>`)
-                .join("")}
-            </select>
-            <select aria-label="Clima" id="clima_${p.id}">
-              ${["templado", "frio", "calido", "lluvioso"]
-                .map((opt) => `<option value="${opt}" ${(p.clima || [])[0] === opt ? "selected" : ""}>${opt}</option>`)
-                .join("")}
-            </select>
-            <button class="btn btn-ghost span-2" type="button" onclick="guardarEdicion('${p.id}')">Guardar cambios</button>
-            <button class="btn btn-danger span-2" type="button" onclick="borrarPrenda('${p.id}')">Quitar prenda</button>
-          </div>
+          <button class="btn btn-danger" type="button" onclick="borrarPrenda('${p.id}')">Quitar foto</button>
         </div>
       </article>
     `
     )
     .join("");
 }
-
-window.guardarEdicion = async function (prendaId) {
-  if (!state.usuario) return;
-  const tipo_articulo = document.getElementById(`tipo_${prendaId}`).value;
-  const color_principal = document.getElementById(`color_${prendaId}`).value.trim() || "sin_definir";
-  const tono = document.getElementById(`tono_${prendaId}`).value;
-  const estampado = document.getElementById(`est_${prendaId}`).value;
-  const formalidad = document.getElementById(`form_${prendaId}`).value;
-  const climaPrincipal = document.getElementById(`clima_${prendaId}`).value;
-
-  const res = await fetch(
-    `/api/closet/${encodeURIComponent(state.usuario.user_id)}/prendas/${encodeURIComponent(prendaId)}`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tipo_articulo,
-        color_principal,
-        tono,
-        estampado,
-        formalidad,
-        clima: [climaPrincipal],
-        etiquetas_confirmadas: true,
-      }),
-    }
-  );
-  if (res.ok) {
-    await cargarCloset();
-  }
-};
 
 window.borrarPrenda = async function (prendaId) {
   if (!state.usuario) return;
@@ -196,20 +135,10 @@ window.borrarPrenda = async function (prendaId) {
 
 uploadForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!state.usuario) return;
-
-  if (!prendaImagen.files.length) return;
+  if (!state.usuario || !prendaImagen.files.length) return;
 
   const fd = new FormData();
   fd.append("imagen", prendaImagen.files[0]);
-  fd.append("tipo_articulo", document.getElementById("prendaTipo").value);
-  fd.append("color_principal", document.getElementById("prendaColor").value.trim() || "sin_definir");
-  fd.append("tono", document.getElementById("prendaTono").value);
-  fd.append("estampado", document.getElementById("prendaEstampado").value);
-  fd.append("formalidad", document.getElementById("prendaFormalidad").value);
-  fd.append("clima", document.getElementById("prendaClima").value);
-  fd.append("corte", document.getElementById("prendaCorte").value);
-  fd.append("ocasiones", document.getElementById("prendaOcasiones").value.trim() || "diario");
 
   const res = await fetch(`/api/closet/${encodeURIComponent(state.usuario.user_id)}/prendas`, {
     method: "POST",
@@ -217,12 +146,12 @@ uploadForm.addEventListener("submit", async (e) => {
   });
   const data = await res.json();
   if (res.ok) {
-    mostrarMensaje(uploadMsg, `Guardada "${data.prenda.tipo_articulo}" en tu clóset.`);
+    mostrarMensaje(uploadMsg, "Foto guardada en tu clóset.");
     uploadForm.reset();
     previewBox.classList.add("hidden");
     await cargarCloset();
   } else {
-    mostrarMensaje(uploadMsg, data.detail || "Error al guardar la prenda.");
+    mostrarMensaje(uploadMsg, data.detail || "Error al guardar la foto.");
   }
 });
 
@@ -241,7 +170,7 @@ generarBtn.addEventListener("click", async () => {
   const outfits = data.outfits || [];
 
   if (!outfits.length) {
-    recsContainer.innerHTML = `<div class="card"><p class="muted">Necesitas al menos una prenda superior y una inferior en tu clóset para generar opciones.</p></div>`;
+    recsContainer.innerHTML = `<div class="card"><p class="muted">Aún no hay suficientes prendas etiquetadas para armar outfits con las reglas actuales. Cuando lleguen las etiquetas del modelo, aquí aparecerán las opciones recomendadas.</p></div>`;
     return;
   }
 
