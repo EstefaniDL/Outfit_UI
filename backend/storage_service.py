@@ -13,11 +13,13 @@ class AlmacenamientoDemo:
     """
 
     def __init__(self, base_dir: Path) -> None:
-        self.base_dir = base_dir
+        self.base_dir = Path(base_dir).resolve()
         self.usuarios_file = self.base_dir / "usuarios.json"
         self.uploads_dir = self.base_dir / "uploads"
+        self.closets_dir = self.base_dir / "closets"
         self.base_dir.mkdir(parents=True, exist_ok=True)
         self.uploads_dir.mkdir(parents=True, exist_ok=True)
+        self.closets_dir.mkdir(parents=True, exist_ok=True)
         if not self.usuarios_file.exists():
             self._escribir_json(self.usuarios_file, {"usuarios": {}})
 
@@ -33,7 +35,7 @@ class AlmacenamientoDemo:
 
     def _escribir_json(self, ruta: Path, datos: Dict[str, Any]) -> None:
         ruta.parent.mkdir(parents=True, exist_ok=True)
-        temp_ruta = ruta.with_suffix(ruta.suffix + ".tmp")
+        temp_ruta = ruta.parent / f".{ruta.name}.{uuid.uuid4().hex[:8]}.tmp"
         with open(temp_ruta, "w", encoding="utf-8") as f:
             json.dump(datos, f, ensure_ascii=False, indent=2)
             f.flush()
@@ -42,7 +44,7 @@ class AlmacenamientoDemo:
 
     @staticmethod
     def normalizar_user_id(identificador: str) -> str:
-        limpio = re.sub(r"[^a-zA-Z0-9_-]+", "_", identificador.strip().lower()).strip("_")
+        limpio = re.sub(r"[^a-zA-Z0-9_-]+", "_", (identificador or "").strip().lower()).strip("_")
         return limpio or "usuario_demo"
 
     def _preparar_espacio_usuario(self, user_id: str) -> None:
@@ -57,7 +59,7 @@ class AlmacenamientoDemo:
         usuarios = data.setdefault("usuarios", {})
 
         if user_id in usuarios:
-            return {"ok": False, "error": "Ese usuario ya existe. Usa 'Entrar' para acceder."}
+            return {"ok": False, "error": "Ese usuario ya existe. Usa la pestaña 'Entrar'."}
 
         usuarios[user_id] = {
             "user_id": user_id,
@@ -75,7 +77,7 @@ class AlmacenamientoDemo:
         if user_id not in usuarios:
             return {
                 "ok": False,
-                "error": "No encontramos una cuenta con ese usuario. Ve a 'Crear cuenta' para registrarte.",
+                "error": "No encontramos esa cuenta. Ve a 'Crear cuenta' para registrarte.",
             }
 
         if nombre and nombre.strip():
@@ -92,7 +94,7 @@ class AlmacenamientoDemo:
 
     def _closet_file(self, user_id: str) -> Path:
         uid = self.normalizar_user_id(user_id)
-        return self.base_dir / "closets" / f"{uid}.json"
+        return self.closets_dir / f"{uid}.json"
 
     def listar_prendas(self, user_id: str) -> List[Dict[str, Any]]:
         uid = self.normalizar_user_id(user_id)
