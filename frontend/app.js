@@ -1,6 +1,7 @@
 const state = {
   usuario: null,
   prendas: [],
+  authModo: "login",
 };
 
 const loginSection = document.getElementById("loginSection");
@@ -10,6 +11,15 @@ const userBadge = document.getElementById("userBadge");
 const loginForm = document.getElementById("loginForm");
 const loginMsg = document.getElementById("loginMsg");
 const logoutBtn = document.getElementById("logoutBtn");
+
+const modeLoginBtn = document.getElementById("modeLoginBtn");
+const modeRegisterBtn = document.getElementById("modeRegisterBtn");
+const authTitle = document.getElementById("authTitle");
+const authSubtitle = document.getElementById("authSubtitle");
+const nombreField = document.getElementById("nombreField");
+const loginIdInput = document.getElementById("loginId");
+const loginNombreInput = document.getElementById("loginNombre");
+const authSubmitBtn = document.getElementById("authSubmitBtn");
 
 const closetGrid = document.getElementById("closetGrid");
 const closetCount = document.getElementById("closetCount");
@@ -26,6 +36,27 @@ function mostrarMensaje(el, texto) {
   el.classList.remove("hidden");
 }
 
+function cambiarModoAuth(nuevoModo) {
+  state.authModo = nuevoModo;
+  loginMsg.classList.add("hidden");
+  const esRegistro = state.authModo === "register";
+  modeLoginBtn.classList.toggle("active", !esRegistro);
+  modeRegisterBtn.classList.toggle("active", esRegistro);
+  nombreField.classList.toggle("hidden", !esRegistro);
+  loginNombreInput.required = esRegistro;
+  if (!esRegistro) {
+    loginNombreInput.value = "";
+  }
+  authTitle.textContent = esRegistro ? "Crea tu cuenta" : "Inicia sesión en tu clóset";
+  authSubtitle.textContent = esRegistro
+    ? "Registra tu cuenta y entra directo a tu clóset."
+    : "Entra con tu correo o usuario para ver las fotos guardadas de tu clóset.";
+  authSubmitBtn.textContent = esRegistro ? "Crear cuenta y entrar" : "Entrar a mi clóset";
+}
+
+modeLoginBtn.addEventListener("click", () => cambiarModoAuth("login"));
+modeRegisterBtn.addEventListener("click", () => cambiarModoAuth("register"));
+
 function activarPestana(tabId) {
   document.querySelectorAll(".tab").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.tab === tabId);
@@ -35,7 +66,7 @@ function activarPestana(tabId) {
   });
 }
 
-document.querySelectorAll(".tab").forEach((btn) => {
+document.querySelectorAll(".tab[data-tab]").forEach((btn) => {
   btn.addEventListener("click", () => activarPestana(btn.dataset.tab));
 });
 
@@ -53,120 +84,81 @@ prendaImagen.addEventListener("change", () => {
   lector.readAsDataURL(archivo);
 });
 
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const identificador = document.getElementById("loginId").value.trim();
-  const nombre = document.getElementById("loginNombre").value.trim();
-  if (!identificador) return;
-
-let authModo = "login"; // "login" | "register"
-
-const modeLoginBtn = document.getElementById("modeLoginBtn");
-const modeRegisterBtn = document.getElementById("modeRegisterBtn");
-const authTitle = document.getElementById("authTitle");
-const authSubtitle = document.getElementById("authSubtitle");
-const nombreField = document.getElementById("nombreField");
-const authSubmitBtn = document.getElementById("authSubmitBtn");
-
-function cambiarModoAuth(nuevoModo) {
-  authModo = nuevoModo;
-  loginMsg.classList.add("hidden");
-  const esRegistro = authModo === "register";
-  const nombreInput = document.getElementById("loginNombre");
-  modeLoginBtn.classList.toggle("active", !esRegistro);
-  modeRegisterBtn.classList.toggle("active", esRegistro);
-  nombreField.classList.toggle("hidden", !esRegistro);
-  nombreInput.required = esRegistro;
-  authTitle.textContent = esRegistro ? "Crea tu cuenta" : "Inicia sesión en tu clóset";
-  authSubtitle.textContent = esRegistro
-    ? "Registra tu cuenta y entra directo a tu clóset."
-    : "Entra con tu correo o usuario para ver las fotos guardadas de tu clóset.";
-  authSubmitBtn.textContent = esRegistro ? "Crear cuenta y entrar" : "Entrar a mi clóset";
-}
-
-modeLoginBtn.addEventListener("click", () => cambiarModoAuth("login"));
-modeRegisterBtn.addEventListener("click", () => cambiarModoAuth("register"));
-
-function abrirSesionUsuario(usuario) {
+async function abrirSesionUsuario(usuario) {
   state.usuario = usuario;
-  localStorage.setItem("outfit_user_id", state.usuario.user_id);
   loginMsg.classList.add("hidden");
   loginSection.classList.add("hidden");
   appSection.classList.remove("hidden");
   userBar.classList.remove("hidden");
-  userBadge.textContent = state.usuario.nombre;
-  cargarCloset();
+  userBadge.textContent = usuario.nombre;
+  await cargarCloset();
 }
 
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   loginMsg.classList.add("hidden");
-  const identificador = document.getElementById("loginId").value.trim();
-  const nombre = document.getElementById("loginNombre").value.trim();
-  if (!identificador) return;
 
-  const endpoint = authModo === "register" ? "/api/auth/register" : "/api/auth/login";
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identificador, nombre: nombre || null }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    mostrarMensaje(loginMsg, data.detail || "No se pudo completar la acción.");
+  const identificador = loginIdInput.value.trim();
+  const nombre = loginNombreInput.value.trim();
+  if (!identificador) {
+    mostrarMensaje(loginMsg, "Escribe tu usuario o correo.");
+    return;
+  }
+  if (state.authModo === "register" && !nombre) {
+    mostrarMensaje(loginMsg, "Escribe tu nombre para crear la cuenta.");
     return;
   }
 
-  abrirSesionUsuario(data.usuario);
+  const endpoint = state.authModo === "register" ? "/api/auth/register" : "/api/auth/login";
+  authSubmitBtn.disabled = true;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        identificador,
+        nombre: state.authModo === "register" ? nombre : null,
+      }),
+    });
+
+    const texto = await res.text();
+    let data = {};
+    try {
+      data = texto ? JSON.parse(texto) : {};
+    } catch (_) {
+      data = {};
+    }
+
+    if (!res.ok) {
+      mostrarMensaje(loginMsg, data.detail || "No se pudo completar la acción.");
+      return;
+    }
+
+    await abrirSesionUsuario(data.usuario);
+  } catch (err) {
+    mostrarMensaje(loginMsg, "Error de conexión con el servidor.");
+  } finally {
+    authSubmitBtn.disabled = false;
+  }
 });
 
 logoutBtn.addEventListener("click", () => {
   state.usuario = null;
   state.prendas = [];
-  localStorage.removeItem("outfit_user_id");
-  document.getElementById("loginId").value = "";
-  document.getElementById("loginNombre").value = "";
+  loginIdInput.value = "";
+  loginNombreInput.value = "";
+  loginMsg.classList.add("hidden");
   appSection.classList.add("hidden");
   userBar.classList.add("hidden");
   loginSection.classList.remove("hidden");
-});
-
-  state.usuario = data.usuario;
-  localStorage.setItem("outfit_user_id", state.usuario.user_id);
-  loginSection.classList.add("hidden");
-  appSection.classList.remove("hidden");
-  userBar.classList.remove("hidden");
-  userBadge.textContent = state.usuario.nombre;
-  await cargarCloset();
-});
-  
-  const data = await res.json();
-  if (!res.ok) {
-    mostrarMensaje(loginMsg, data.detail || "No se pudo iniciar sesión.");
-    return;
-  }
-
-  state.usuario = data.usuario;
-  localStorage.setItem("outfit_user_id", state.usuario.user_id);
-  loginSection.classList.add("hidden");
-  appSection.classList.remove("hidden");
-  userBar.classList.remove("hidden");
-  userBadge.textContent = `${state.usuario.nombre} (@${state.usuario.user_id})`;
-  await cargarCloset();
-});
-
-logoutBtn.addEventListener("click", () => {
-  state.usuario = null;
-  state.prendas = [];
-  localStorage.removeItem("outfit_user_id");
-  appSection.classList.add("hidden");
-  userBar.classList.add("hidden");
-  loginSection.classList.remove("hidden");
+  cambiarModoAuth("login");
 });
 
 async function cargarCloset() {
   if (!state.usuario) return;
   const res = await fetch(`/api/closet/${encodeURIComponent(state.usuario.user_id)}`);
+  if (!res.ok) return;
   const data = await res.json();
   state.prendas = data.prendas || [];
   renderCloset();
@@ -280,6 +272,6 @@ generarBtn.addEventListener("click", async () => {
 });
 
 localStorage.removeItem("outfit_user_id");
-document.getElementById("loginId").value = "";
-document.getElementById("loginNombre").value = "";
-})();
+loginIdInput.value = "";
+loginNombreInput.value = "";
+cambiarModoAuth("login");
