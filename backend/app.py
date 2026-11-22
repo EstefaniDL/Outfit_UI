@@ -1,9 +1,8 @@
-import json
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -17,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
 DATA_DIR = BASE_DIR / "data"
 
-app = FastAPI(title="Recomendador de Outfits — Base UI", version="0.2.0")
+app = FastAPI(title="Estudio de Outfits", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,26 +29,9 @@ storage.uploads_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(storage.uploads_dir)), name="uploads")
 
 
-class LoginRequest(BaseModel):
+class AuthRequest(BaseModel):
     identificador: str
     nombre: Optional[str] = None
-
-
-class ActualizarPrendaRequest(BaseModel):
-    tipo_articulo: Optional[str] = None
-    color_principal: Optional[str] = None
-    tono: Optional[str] = None
-    estampado: Optional[str] = None
-    material: Optional[str] = None
-    corte: Optional[str] = None
-    largo: Optional[str] = None
-    formalidad: Optional[str] = None
-    estilo: Optional[List[str]] = None
-    estetica: Optional[List[str]] = None
-    temporada: Optional[List[str]] = None
-    clima: Optional[List[str]] = None
-    ocasiones: Optional[List[str]] = None
-    etiquetas_confirmadas: Optional[bool] = None
 
 
 class RecomendacionRequest(BaseModel):
@@ -82,23 +64,24 @@ def servir_js() -> FileResponse:
     return FileResponse(js_file, media_type="application/javascript")
 
 
-@app.post("/api/auth/register")
-def register(payload: LoginRequest) -> Dict[str, Any]:
+@app.post("/api/auth/login")
+def login(payload: AuthRequest) -> Dict[str, Any]:
     if not payload.identificador.strip():
-        raise HTTPException(status_code=400, detail="Elige un usuario o correo para crear tu cuenta.")
+        raise HTTPException(status_code=400, detail="Ingresa tu usuario o correo.")
+    resultado = storage.iniciar_sesion(payload.identificador, payload.nombre)
+    if not resultado.get("ok"):
+        raise HTTPException(status_code=404, detail=resultado.get("error", "Cuenta no encontrada."))
+    usuario = resultado["usuario"]
+    prendas = storage.listar_prendas(usuario["user_id"])
+    return {"usuario": usuario, "total_prendas": len(prendas)}
+
+
+@app.post("/api/auth/register")
+def register(payload: AuthRequest) -> Dict[str, Any]:
+    if not payload.identificador.strip():
+        raise HTTPException(status_code=400, detail="Ingresa un usuario o correo.")
     if not (payload.nombre and payload.nombre.strip()):
         raise HTTPException(status_code=400, detail="Ingresa tu nombre.")
-    resultado = storage.crear_cuenta(payload.identificador, payload.nombre)
-    if not resultado.get("ok"):
-        raise HTTPException(status_code=409, detail=resultado.get("error", "No se pudo crear la cuenta."))
-    usuario = resultado["usuario"]
-    return {"usuario": usuario, "total_prendas": 0}
-
-
-@app.post("/api/auth/register")
-def register(payload: LoginRequest) -> Dict[str, Any]:
-    if not payload.identificador.strip():
-        raise HTTPException(status_code=400, detail="Elige un usuario o correo para crear tu cuenta.")
     resultado = storage.crear_cuenta(payload.identificador, payload.nombre)
     if not resultado.get("ok"):
         raise HTTPException(status_code=409, detail=resultado.get("error", "No se pudo crear la cuenta."))
@@ -119,75 +102,25 @@ def obtener_closet(user_id: str) -> Dict[str, Any]:
 async def subir_prenda(
     user_id: str,
     imagen: UploadFile = File(...),
-    tipo_articulo: str = Form("superior"),
-    color_principal: str = Form("sin_definir"),
-    tono: str = Form("medio"),
-    estampado: str = Form("liso"),
-    material: str = Form("algodon"),
-    corte: str = Form("regular"),
-    largo: str = Form("regular"),
-    formalidad: str = Form("casual"),
-    clima: str = Form("templado"),
-    temporada: str = Form("todo_el_ano"),
-    ocasiones: str = Form("diario"),
-    estilo: str = Form("casual"),
-    estetica: str = Form("clasico"),
-    metadatos_externos: Optional[str] = Form(None),
 ) -> Dict[str, Any]:
-    usuario = storage.iniciar_o_registrar_usuario(user_id)
+    usuario = storage.obtener_usuario(user_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
     contenido = await imagen.read()
     if not contenido:
         raise HTTPException(status_code=400, detail="La imagen está vacía.")
 
     imagen_url = storage.guardar_imagen(usuario["user_id"], imagen.filename or "foto.jpg", contenido)
     prenda_id = f"pr_{uuid.uuid4().hex[:8]}"
-
-    base_payload: Dict[str, Any] = {
-        "tipo_articulo": tipo_articulo,
-        "color_principal": color_principal,
-        "tono": tono,
-        "estampado": estampado,
-        "material": material,
-        "corte": corte,
-        "largo": largo,
-        "formalidad": formalidad,
-        "clima": clima,
-        "temporada": temporada,
-        "ocasiones": ocasiones,
-        "estilo": estilo,
-        "estetica": estetica,
-        "origen_etiqueta": "usuario_o_pendiente",
-    }
-
-    if metadatos_externos:
-        try:
-            externo = json.loads(metadatos_externos)
-            if isinstance(externo, dict):
-                base_payload.update(externo)
-                base_payload["origen_etiqueta"] = externo.get("origen_etiqueta", "modulo_externo")
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="metadatos_externos no es un JSON válido.")
-
     prenda = adaptar_prediccion_externa(
-        payload=base_payload,
+        payload={"origen_etiqueta": "pendiente_modelo"},
         user_id=usuario["user_id"],
         imagen_url=imagen_url,
         prenda_id=prenda_id,
     )
     guardada = storage.guardar_prenda(usuario["user_id"], prenda.to_dict())
     return {"prenda": guardada}
-
-
-@app.patch("/api/closet/{user_id}/prendas/{prenda_id}")
-def actualizar_prenda(user_id: str, prenda_id: str, cambios: ActualizarPrendaRequest) -> Dict[str, Any]:
-    actualizado = storage.actualizar_prenda(
-        user_id=user_id,
-        prenda_id=prenda_id,
-        cambios={k: v for k, v in cambios.model_dump().items() if v is not None},
-    )
-    if not actualizado:
-        raise HTTPException(status_code=404, detail="Prenda no encontrada.")
-    return {"prenda": actualizado}
 
 
 @app.delete("/api/closet/{user_id}/prendas/{prenda_id}")
