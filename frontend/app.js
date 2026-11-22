@@ -13,6 +13,9 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 const closetGrid = document.getElementById("closetGrid");
 const closetCount = document.getElementById("closetCount");
+const prendaImagen = document.getElementById("prendaImagen");
+const previewBox = document.getElementById("previewBox");
+const previewImg = document.getElementById("previewImg");
 const uploadForm = document.getElementById("uploadForm");
 const uploadMsg = document.getElementById("uploadMsg");
 const generarBtn = document.getElementById("generarBtn");
@@ -34,6 +37,20 @@ function activarPestana(tabId) {
 
 document.querySelectorAll(".tab").forEach((btn) => {
   btn.addEventListener("click", () => activarPestana(btn.dataset.tab));
+});
+
+prendaImagen.addEventListener("change", () => {
+  const archivo = prendaImagen.files && prendaImagen.files[0];
+  if (!archivo) {
+    previewBox.classList.add("hidden");
+    return;
+  }
+  const lector = new FileReader();
+  lector.onload = (ev) => {
+    previewImg.src = ev.target.result;
+    previewBox.classList.remove("hidden");
+  };
+  lector.readAsDataURL(archivo);
 });
 
 loginForm.addEventListener("submit", async (e) => {
@@ -99,17 +116,35 @@ function renderCloset() {
             <span class="tag">${p.formalidad}</span>
             <span class="tag">Clima: ${(p.clima || []).join(", ")}</span>
           </div>
-          <div class="stack">
+          <div class="edit-grid">
             <select aria-label="Tipo de prenda" id="tipo_${p.id}">
               ${["superior", "inferior", "calzado", "exterior", "cuerpo_completo", "otro"]
                 .map((opt) => `<option value="${opt}" ${p.tipo_articulo === opt ? "selected" : ""}>${opt}</option>`)
                 .join("")}
             </select>
             <input type="text" aria-label="Color principal" id="color_${p.id}" value="${p.color_principal || ""}" placeholder="Color principal" />
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-ghost" style="flex:1;" type="button" onclick="guardarEdicion('${p.id}')">Guardar</button>
-              <button class="btn btn-danger" type="button" onclick="borrarPrenda('${p.id}')">Quitar</button>
-            </div>
+            <select aria-label="Tono" id="tono_${p.id}">
+              ${["claro", "medio", "oscuro", "suave", "saturado"]
+                .map((opt) => `<option value="${opt}" ${p.tono === opt ? "selected" : ""}>${opt}</option>`)
+                .join("")}
+            </select>
+            <select aria-label="Estampado" id="est_${p.id}">
+              ${["liso", "rayas", "cuadros", "flores", "grafico", "otro"]
+                .map((opt) => `<option value="${opt}" ${p.estampado === opt ? "selected" : ""}>${opt}</option>`)
+                .join("")}
+            </select>
+            <select aria-label="Formalidad" id="form_${p.id}">
+              ${["casual", "semiformal", "formal"]
+                .map((opt) => `<option value="${opt}" ${p.formalidad === opt ? "selected" : ""}>${opt}</option>`)
+                .join("")}
+            </select>
+            <select aria-label="Clima" id="clima_${p.id}">
+              ${["templado", "frio", "calido", "lluvioso"]
+                .map((opt) => `<option value="${opt}" ${(p.clima || [])[0] === opt ? "selected" : ""}>${opt}</option>`)
+                .join("")}
+            </select>
+            <button class="btn btn-ghost span-2" type="button" onclick="guardarEdicion('${p.id}')">Guardar cambios</button>
+            <button class="btn btn-danger span-2" type="button" onclick="borrarPrenda('${p.id}')">Quitar prenda</button>
           </div>
         </div>
       </article>
@@ -122,6 +157,10 @@ window.guardarEdicion = async function (prendaId) {
   if (!state.usuario) return;
   const tipo_articulo = document.getElementById(`tipo_${prendaId}`).value;
   const color_principal = document.getElementById(`color_${prendaId}`).value.trim() || "sin_definir";
+  const tono = document.getElementById(`tono_${prendaId}`).value;
+  const estampado = document.getElementById(`est_${prendaId}`).value;
+  const formalidad = document.getElementById(`form_${prendaId}`).value;
+  const climaPrincipal = document.getElementById(`clima_${prendaId}`).value;
 
   const res = await fetch(
     `/api/closet/${encodeURIComponent(state.usuario.user_id)}/prendas/${encodeURIComponent(prendaId)}`,
@@ -131,6 +170,10 @@ window.guardarEdicion = async function (prendaId) {
       body: JSON.stringify({
         tipo_articulo,
         color_principal,
+        tono,
+        estampado,
+        formalidad,
+        clima: [climaPrincipal],
         etiquetas_confirmadas: true,
       }),
     }
@@ -155,11 +198,10 @@ uploadForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!state.usuario) return;
 
-  const fileInput = document.getElementById("prendaImagen");
-  if (!fileInput.files.length) return;
+  if (!prendaImagen.files.length) return;
 
   const fd = new FormData();
-  fd.append("imagen", fileInput.files[0]);
+  fd.append("imagen", prendaImagen.files[0]);
   fd.append("tipo_articulo", document.getElementById("prendaTipo").value);
   fd.append("color_principal", document.getElementById("prendaColor").value.trim() || "sin_definir");
   fd.append("tono", document.getElementById("prendaTono").value);
@@ -177,6 +219,7 @@ uploadForm.addEventListener("submit", async (e) => {
   if (res.ok) {
     mostrarMensaje(uploadMsg, `Guardada "${data.prenda.tipo_articulo}" en tu clóset.`);
     uploadForm.reset();
+    previewBox.classList.add("hidden");
     await cargarCloset();
   } else {
     mostrarMensaje(uploadMsg, data.detail || "Error al guardar la prenda.");
