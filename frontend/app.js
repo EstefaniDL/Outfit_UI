@@ -59,7 +59,7 @@ loginForm.addEventListener("submit", async (e) => {
   const nombre = document.getElementById("loginNombre").value.trim();
   if (!identificador) return;
 
-  let authModo = "login"; // "login" | "register"
+let authModo = "login"; // "login" | "register"
 
 const modeLoginBtn = document.getElementById("modeLoginBtn");
 const modeRegisterBtn = document.getElementById("modeRegisterBtn");
@@ -79,16 +79,28 @@ function cambiarModoAuth(nuevoModo) {
   nombreInput.required = esRegistro;
   authTitle.textContent = esRegistro ? "Crea tu cuenta" : "Inicia sesión en tu clóset";
   authSubtitle.textContent = esRegistro
-    ? "Registra tu cuenta para guardar tu clóset personal en tus próximas visitas."
+    ? "Registra tu cuenta y entra directo a tu clóset."
     : "Entra con tu correo o usuario para ver las fotos guardadas de tu clóset.";
-  authSubmitBtn.textContent = esRegistro ? "Crear cuenta" : "Entrar a mi clóset";
+  authSubmitBtn.textContent = esRegistro ? "Crear cuenta y entrar" : "Entrar a mi clóset";
 }
 
 modeLoginBtn.addEventListener("click", () => cambiarModoAuth("login"));
 modeRegisterBtn.addEventListener("click", () => cambiarModoAuth("register"));
 
+function abrirSesionUsuario(usuario) {
+  state.usuario = usuario;
+  localStorage.setItem("outfit_user_id", state.usuario.user_id);
+  loginMsg.classList.add("hidden");
+  loginSection.classList.add("hidden");
+  appSection.classList.remove("hidden");
+  userBar.classList.remove("hidden");
+  userBadge.textContent = state.usuario.nombre;
+  cargarCloset();
+}
+
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  loginMsg.classList.add("hidden");
   const identificador = document.getElementById("loginId").value.trim();
   const nombre = document.getElementById("loginNombre").value.trim();
   if (!identificador) return;
@@ -104,6 +116,20 @@ loginForm.addEventListener("submit", async (e) => {
     mostrarMensaje(loginMsg, data.detail || "No se pudo completar la acción.");
     return;
   }
+
+  abrirSesionUsuario(data.usuario);
+});
+
+logoutBtn.addEventListener("click", () => {
+  state.usuario = null;
+  state.prendas = [];
+  localStorage.removeItem("outfit_user_id");
+  document.getElementById("loginId").value = "";
+  document.getElementById("loginNombre").value = "";
+  appSection.classList.add("hidden");
+  userBar.classList.add("hidden");
+  loginSection.classList.remove("hidden");
+});
 
   state.usuario = data.usuario;
   localStorage.setItem("outfit_user_id", state.usuario.user_id);
@@ -253,10 +279,7 @@ generarBtn.addEventListener("click", async () => {
     .join("");
 });
 
-(async function init() {
-  const guardado = localStorage.getItem("outfit_user_id");
-  if (guardado) {
-    document.getElementById("loginId").value = guardado;
-    loginForm.dispatchEvent(new Event("submit"));
-  }
+localStorage.removeItem("outfit_user_id");
+document.getElementById("loginId").value = "";
+document.getElementById("loginNombre").value = "";
 })();
