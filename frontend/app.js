@@ -72,13 +72,15 @@ function cambiarModoAuth(nuevoModo) {
   authModo = nuevoModo;
   loginMsg.classList.add("hidden");
   const esRegistro = authModo === "register";
+  const nombreInput = document.getElementById("loginNombre");
   modeLoginBtn.classList.toggle("active", !esRegistro);
   modeRegisterBtn.classList.toggle("active", esRegistro);
   nombreField.classList.toggle("hidden", !esRegistro);
+  nombreInput.required = esRegistro;
   authTitle.textContent = esRegistro ? "Crea tu cuenta" : "Inicia sesión en tu clóset";
   authSubtitle.textContent = esRegistro
-    ? "Registra un usuario para guardar tu clóset personal en tus próximas visitas."
-    : "Entra con tu usuario para ver las fotos guardadas de tu clóset sin subirlas de nuevo.";
+    ? "Registra tu cuenta para guardar tu clóset personal en tus próximas visitas."
+    : "Entra con tu correo o usuario para ver las fotos guardadas de tu clóset.";
   authSubmitBtn.textContent = esRegistro ? "Crear cuenta" : "Entrar a mi clóset";
 }
 
