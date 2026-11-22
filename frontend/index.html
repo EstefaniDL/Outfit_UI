@@ -24,7 +24,6 @@
   </header>
 
   <main class="container">
-    <!-- Inicio de sesión / Crear cuenta -->
     <section id="loginSection" class="card auth-card">
       <div class="tabs" style="margin-bottom:14px;">
         <button id="modeLoginBtn" class="tab active" type="button">Entrar</button>
@@ -33,24 +32,23 @@
 
       <h2 id="authTitle">Inicia sesión en tu clóset</h2>
       <p id="authSubtitle" class="muted">
-        Entra con tu usuario para ver las fotos guardadas de tu clóset sin subirlas de nuevo.
+        Entra con tu correo o usuario para ver las fotos guardadas de tu clóset.
       </p>
 
-      <form id="loginForm" class="stack" style="margin-top:12px;">
+      <form id="loginForm" class="stack" style="margin-top:12px;" autocomplete="off">
         <label class="field">
           <span>Usuario o correo</span>
-          <input id="loginId" type="text" placeholder="ej. usuario@ejemplo.com" required />
+          <input id="loginId" type="text" placeholder="ej. estefani@correo.com o estefani" autocomplete="off" required />
         </label>
         <label id="nombreField" class="field hidden">
           <span>Tu nombre</span>
-          <input id="loginNombre" type="text" placeholder="ej. Usuario" />
+          <input id="loginNombre" type="text" placeholder="ej. Estefani" autocomplete="off" />
         </label>
         <button id="authSubmitBtn" class="btn btn-primary" type="submit">Entrar a mi clóset</button>
       </form>
       <div id="loginMsg" class="msg hidden"></div>
     </section>
 
-    <!-- Aplicación principal -->
     <section id="appSection" class="hidden stack-lg">
       <nav class="tabs" aria-label="Secciones de la aplicación">
         <button class="tab active" data-tab="closetTab" type="button">Mi Clóset</button>
@@ -58,7 +56,6 @@
         <button class="tab" data-tab="recTab" type="button">Recomendar outfits</button>
       </nav>
 
-      <!-- Pestaña 1: Mi Clóset -->
       <div id="closetTab" class="tab-panel active">
         <div class="panel-header">
           <div>
@@ -73,12 +70,11 @@
         <div id="closetGrid" class="grid"></div>
       </div>
 
-      <!-- Pestaña 2: Subir foto -->
       <div id="uploadTab" class="tab-panel">
         <div class="card">
           <h2>Subir foto a tu clóset</h2>
           <p class="muted">
-            Sube la foto de tu prenda. El etiquetado automático de tipo, color y atributos quedará conectado cuando esté listo el módulo de datos.
+            Sube la foto de tu prenda. El etiquetado automático quedará conectado cuando esté listo el módulo de datos.
           </p>
           <form id="uploadForm" class="stack" style="margin-top:14px;">
             <label class="field">
@@ -99,7 +95,6 @@
         </div>
       </div>
 
-      <!-- Pestaña 3: Recomendar outfits -->
       <div id="recTab" class="tab-panel">
         <div class="card">
           <h2>Recomendar outfits</h2>
