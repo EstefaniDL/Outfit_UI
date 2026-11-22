@@ -24,11 +24,11 @@
   </header>
 
   <main class="container">
-    <!-- Sección 1: Inicio de sesión -->
+    <!-- Inicio de sesión -->
     <section id="loginSection" class="card auth-card">
       <h2>Inicia sesión para ver tu clóset</h2>
       <p class="muted">
-        Tus prendas quedan guardadas por usuario para que no tengas que subir tus fotos cada vez que entres.
+        Tu cuenta guarda tus prendas para que no tengas que volver a subir tus fotos en cada visita.
       </p>
       <form id="loginForm" class="stack">
         <label class="field">
@@ -44,7 +44,7 @@
       <div id="loginMsg" class="msg hidden"></div>
     </section>
 
-    <!-- Sección 2: App principal (Clóset + Subida + Vista de recomendación) -->
+    <!-- Aplicación principal -->
     <section id="appSection" class="hidden stack-lg">
       <nav class="tabs" aria-label="Secciones de la aplicación">
         <button class="tab active" data-tab="closetTab" type="button">Mi Clóset</button>
@@ -52,30 +52,35 @@
         <button class="tab" data-tab="recTab" type="button">Recomendar outfits</button>
       </nav>
 
-      <!-- Pestaña: Mi Clóset -->
+      <!-- Pestaña 1: Mi Clóset -->
       <div id="closetTab" class="tab-panel active">
         <div class="panel-header">
           <div>
             <h2>Prendas guardadas</h2>
-            <p class="muted">Revisa o corrige las etiquetas de cada prenda antes de armar combinaciones.</p>
+            <p class="muted">Revisa o ajusta las etiquetas de cada prenda antes de pedir recomendaciones.</p>
           </div>
           <span id="closetCount" class="count-pill">0 prendas</span>
         </div>
         <div id="closetGrid" class="grid"></div>
       </div>
 
-      <!-- Pestaña: Subir prenda -->
+      <!-- Pestaña 2: Subir prenda -->
       <div id="uploadTab" class="tab-panel">
         <div class="card">
           <h2>Agregar prenda a tu clóset</h2>
           <p class="muted">
-            Sube una foto y asigna o ajusta sus atributos (mientras se conecta el módulo de etiquetado/modelo).
+            Sube una foto y asigna sus atributos actuales (podrás editarlos después o enlazar el módulo de etiquetado cuando esté listo).
           </p>
           <form id="uploadForm" class="form-grid">
             <label class="field full">
               <span>Foto de la prenda</span>
               <input id="prendaImagen" type="file" accept="image/jpeg,image/png,image/webp" required />
             </label>
+
+            <div id="previewBox" class="preview-box full hidden">
+              <img id="previewImg" alt="Vista previa de la prenda" />
+              <span class="muted">Vista previa antes de guardar</span>
+            </div>
 
             <label class="field">
               <span>Tipo de artículo</span>
@@ -158,12 +163,12 @@
         </div>
       </div>
 
-      <!-- Pestaña: Recomendar outfits -->
+      <!-- Pestaña 3: Recomendar outfits -->
       <div id="recTab" class="tab-panel">
         <div class="card">
-          <h2>Opciones recomendadas según ocasión y clima</h2>
+          <h2>Recomendaciones curadas por ocasión y clima</h2>
           <p class="muted">
-            Se seleccionan opciones curadas y variadas bajo reglas de colorimetría, formalidad, clima, capas y proporciones (no todas las combinaciones posibles).
+            Entrega opciones variadas filtradas y puntuadas bajo reglas de colorimetría, formalidad, clima, capas y proporciones (sin mostrar todas las combinaciones posibles).
           </p>
           <div class="form-grid">
             <label class="field">
